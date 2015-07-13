@@ -1,0 +1,13 @@
+
+
+0. Requirement
+-. uri path의 서두 몇 부분(/로 구분)으로 집계
+
+
+-. 처리된 데이터의 일자 표시하기
+	javascript의 date picker 이용
+http://api.jqueryui.com/datepicker/
+
+
+-. URI별 통계
+특정 URI에 대해, 일자별 변동 추이를 보기 위함.

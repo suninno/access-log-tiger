@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.lge.cto.swinfra.tiger.clienttime">
+
+<!-- 
+Source IP별 통계 페이지에서의
+IP 대역별 평균 지연 시간 그래프
+주의: httpstatus >= 200 and < 400 인 데이터만 취급함
+	<if test="datatype == rs">
+	, round(sum(rs)/sum(cnt)*1000,2) as avgdata
+	</if>
+
+-->
+	<select id="retrieveAvgRsHourlyClienttime" parameterType="java.util.Map" 
+		resultType="AvgClienttimeHourlyVO">
+	SELECT hh, service, ip_subset
+		, round(sum(rs)/sum(cnt)*1000,2) as avgRs
+		, round(sum(re)/sum(cnt)*1000,2) as avgRe
+		, round(sum(lee)/sum(cnt)*1000,2) as avgLee
+	
+	FROM TClienttime
+	WHERE ymd = #{date}
+	<if test="service != null">
+		AND service = #{service}
+	</if>
+	<if test="status1 != null">
+		AND httpstatus &gt;= #{status1}::int
+	</if>
+	<if test="status2 != null">
+		AND httpstatus &lt; #{status2}::int
+	</if>
+	AND lee > 0
+	GROUP BY hh, service, ip_subset
+	ORDER BY hh, service, ip_subset
+	</select>
+
+
+
+	<select id="retrieveAvgRsDailyClienttime" parameterType="java.util.Map" 
+		resultType="AvgClienttimeDailyVO">
+		select ymd, service, ip_subset
+		, round(sum(rs)/sum(cnt)*1000,2) as avgRs
+		, round(sum(re)/sum(cnt)*1000,2) as avgRe
+		, round(sum(lee)/sum(cnt)*1000,2) as avgLee
+
+		FROM tclienttime
+		WHERE ymd between #{sdate} and #{edate}
+	<if test="service != null">
+		AND service = #{service}
+	</if>		
+	<if test="status1 != null">
+		AND httpstatus &gt;= #{status1}::int
+	</if>
+	<if test="status2 != null">
+		AND httpstatus &lt; #{status2}::int
+	</if>		
+		group by ymd, service, ip_subset
+		order by ymd, service, ip_subset
+	</select>
+ 
+</mapper>

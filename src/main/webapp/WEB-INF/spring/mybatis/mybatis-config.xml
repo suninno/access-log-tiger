@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "HTTP://mybatis.org/dtd/mybatis-3-config.dtd">
+
+
+<configuration>
+	<settings>
+		<setting name="cacheEnabled" value="false"/>
+		<setting name="useGeneratedKeys" value="true"/>
+		<setting name="defaultExecutorType" value="REUSE"/>
+		
+	</settings>
+	
+	
+	<typeAliases>
+		<typeAlias alias="UriPathDto" type="com.lge.cto.swinfra.tiger.domain.UriPathDto"/>
+		<typeAlias alias="AvgLatencyOfIPRangeVO" type="com.lge.cto.swinfra.tiger.vo.AvgLatencyOfIPRangeVO"/>
+		<typeAlias alias="AvgClienttimeDailyVO" type="com.lge.cto.swinfra.tiger.vo.AvgClienttimeDailyVO"/>
+		<typeAlias alias="AvgClienttimeHourlyVO" type="com.lge.cto.swinfra.tiger.vo.AvgClienttimeHourlyVO"/>
+	</typeAliases>
+
+
+	<mappers>
+		<mapper resource="com/lge/cto/swinfra/tiger/myBatis/mapper/tigerMapper.xml"/>
+		<mapper resource="com/lge/cto/swinfra/tiger/myBatis/mapper/uriMapper.xml"/>
+		<mapper resource="com/lge/cto/swinfra/tiger/myBatis/mapper/LatencyMapper.xml"/>
+		<mapper resource="com/lge/cto/swinfra/tiger/myBatis/mapper/ClienttimeMapper.xml"/>
+		<mapper resource="com/lge/cto/swinfra/tiger/myBatis/mapper/StatusMapper.xml"/>
+	</mappers>
+	
+</configuration>

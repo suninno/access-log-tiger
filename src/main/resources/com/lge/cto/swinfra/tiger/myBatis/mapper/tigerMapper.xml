@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.lge.cto.swinfra.tiger">
+
+	<resultMap type="java.util.HashMap" id="hashmap">
+	</resultMap>
+	
+	
+	<!--  for PostgreSQL -->
+	<select id="getcalledCountDaily" parameterType="java.util.Map" resultType="UriPathDto">
+		SELECT uriPath, rowCnt as hitCount, sumLatency/rowCnt as avgElapTime, MinLatency as minElapTime, MaxLatency as maxElapTime
+		FROM TuridataDaily
+		WHERE calledDate = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+		<if test="limitCnt != null">
+		AND rowCnt &gt;= cast(#{limitCnt} as int)
+		</if>
+		
+		ORDER BY rowCnt DESC
+		;
+	</select>
+	
+	
+	<resultMap type="com.lge.cto.swinfra.tiger.domain.HttpStatusDto" id="HttpStatusResult">
+		<id property="httpStatus" column="statuscode" javaType="String"/>
+		<result property="count" column="cnt" javaType="int" />
+	</resultMap>
+	
+	
+	<!--  Status Code 통계 -->
+	<select id="getHttpStatusDaily" parameterType="java.util.Map" resultMap="HttpStatusResult">
+		SELECT statuscode, sum(cnt) as cnt
+		FROM tstatus
+		WHERE calleddate = to_timestamp(#{date}, 'yyyy-mm-dd')
+		and logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+		group by statuscode
+		order by statuscode
+	</select>
+	
+	
+	<!--  Response time 별 통계 -->
+	<select id="getLatencyDaily" parameterType="java.util.Map" resultType="java.lang.Long">
+		SELECT count(*) as cnt 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime between #{minResT}::int and #{maxResT}::int
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+	</select>
+	
+	<select id="getLatencyDailyMin" parameterType="java.util.Map" resultType="java.lang.Long">
+		SELECT count(*) 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime &lt;= #{maxResT}::int
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+	</select>
+	
+	<select id="getLatencyDailyMax" parameterType="java.util.Map" resultType="java.lang.Long">
+		SELECT count(*) 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime &gt; #{minResT}::int
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+	</select>
+</mapper>

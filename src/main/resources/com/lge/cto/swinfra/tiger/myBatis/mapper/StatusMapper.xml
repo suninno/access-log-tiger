@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.lge.cto.swinfra.tiger.status">
+
+	<resultMap type="com.lge.cto.swinfra.tiger.vo.StatusVO" id="statusRes">
+		<result property="ymd" column="calleddate" javaType="java.lang.String"/>
+		<result property="service" column="service" javaType="java.lang.String"/>
+		<result property="cnt" column="cnt" javaType="long"/>
+	</resultMap>
+
+	<select id="retrieveStatusData" resultMap="statusRes" >
+select
+calleddate, service, count(*) as cnt
+from tstatus
+group by calleddate, service
+order by calleddate, service
+	</select>
+
+</mapper>

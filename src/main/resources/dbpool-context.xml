@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+	http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-2.0.xsd
+	http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+	http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc-4.0.xsd">
+
+
+
+	<bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer">
+		<property name="locations">
+			<value>classpath:dbpool.properties</value>
+		</property>
+	</bean>
+	
+	
+	<bean id="dataSource" class="org.apache.tomcat.jdbc.pool.DataSource" destroy-method="close">
+		<property name="driverClassName" value="${jdbc.driverClass}" />
+		<property name="url" value="${jdbc.url}" />
+		<property name="username" value="${jdbc.username}" />
+		<property name="password" value="${jdbc.password}" />
+	</bean>
+	
+	
+	<!-- transaction manager -->  
+	<tx:annotation-driven transaction-manager="transactionManager" />
+	
+	<bean id="transactionManager" class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource"/>
+	</bean>
+	
+	<context:annotation-config/> 
+
+	
+	<bean id="sqlSessionFactory" class="org.mybatis.spring.SqlSessionFactoryBean">
+		<property name="dataSource" ref="dataSource" />
+		<property name="configLocation" value="/WEB-INF/spring/mybatis/mybatis-config.xml" />
+	</bean>
+
+	<bean id="sqlSession" class="org.mybatis.spring.SqlSessionTemplate">
+		<constructor-arg index="0" ref="sqlSessionFactory"/>
+	</bean>
+	
+	
+	<bean id="uriDao" class="com.lge.cto.swinfra.tiger.dao.UriDao"/>
+	<bean id="uriService" class="com.lge.cto.swinfra.tiger.service.UriService"/>
+	
+	<bean id="iprangeDao" class="com.lge.cto.swinfra.tiger.dao.IPRangeDao"/>
+	<bean id="iprangeService" class="com.lge.cto.swinfra.tiger.service.IPRangeService"/>
+	
+	<bean id="clienttimeService" class="com.lge.cto.swinfra.tiger.service.ClienttimeService"/>
+	<bean id="clienttimeDao" class="com.lge.cto.swinfra.tiger.dao.ClienttimeDao"/>
+	
+	
+	<bean id="latencyService" class="com.lge.cto.swinfra.tiger.service.LatencyService"/>
+	<bean id="latencyDao" class="com.lge.cto.swinfra.tiger.dao.LatencyDao"/>
+	
+	
+	<bean id="statusService" class="com.lge.cto.swinfra.tiger.service.StatusService"/>
+	<bean id="statusDao" class="com.lge.cto.swinfra.tiger.dao.StatusDao"/>
+</beans>

@@ -1,0 +1,165 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.lge.cto.swinfra.tiger.aday">
+	
+
+	<resultMap type="java.util.HashMap" id="hashmap">
+	</resultMap>
+	
+	<resultMap type="com.lge.cto.swinfra.tiger.domain.AvgRestofUriDto" id="AvgRestofUriResult">
+		<id property="calledTime" column="calledtime" javaType="java.lang.String"/>
+		<result property="avgRest" column="avgResT" javaType="double" />
+		<result property="count" column="cnt" javaType="int" />
+	</resultMap>
+
+	<!--  for PostgreSQL -->
+	<!-- 일자별 특정 URI Path에 대한 평균 지연 -->
+	<select id="getUriDetail" parameterType="java.util.Map" resultMap="AvgRestofUriResult">
+		SELECT to_char(calledtime, 'HH24:MI') as calledtime,  
+			(sumlatency/rowcnt) as avgRest, rowcnt as cnt
+		FROM TURIDATApermin					
+		WHERE CALLEDTIME::date = to_timestamp(#{date}, 'YYYY-MM-DD')
+		<if test="uripath != null">
+		AND uripath = #{uripath}
+		</if>
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+		ORDER BY calledtime
+	</select>
+
+	
+	<select id="getPeriodUriDetailPerMinute" parameterType="java.util.Map" resultType="com.lge.cto.swinfra.tiger.domain.ShortPeriodDataofUriDto">
+	SELECT to_char(calledtime, 'MM-DD HH24:MI') as time, 
+	sum(rowcnt) as rowcnt, sum(sumlatency) as sumlatency, 
+	round((sum(sumlatency)/sum(rowcnt))) as avgLatency
+	FROM turidatapermin
+
+	WHERE uripath like #{uripath}
+	AND calledtime between to_timestamp(#{start}, 'YYYY-MM-DD HH24:MI') and to_timestamp(#{end}, 'YYYY-MM-DD HH24:MI')
+	AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>												
+	group by time
+	ORDER BY time
+	</select>
+	
+
+	
+	<select id="getPeriodUriDetailPerHour" parameterType="java.util.Map" resultType="com.lge.cto.swinfra.tiger.domain.ShortPeriodDataofUriDto">
+	SELECT to_char(calledtime, 'MM-DD HH24"h"') as time, 
+	sum(rowcnt) as rowcnt, sum(sumlatency) as sumlatency, 
+	round((sum(sumlatency)/sum(rowcnt))) as avgLatency
+	FROM turidatapermin
+	WHERE uripath like #{uripath}
+	AND calledtime between to_timestamp(#{start}, 'YYYY-MM-DD HH24:MI') and to_timestamp(#{end}, 'YYYY-MM-DD HH24:MI')
+	AND logType = #{logType}
+	<if test="service != null">
+	AND service = #{service}
+	</if>
+	group by time
+	ORDER BY time
+	</select>
+
+
+	<select id="getPeriodUriDetailPerDay" parameterType="java.util.Map" resultType="com.lge.cto.swinfra.tiger.domain.ShortPeriodDataofUriDto">
+	SELECT calleddate as time,
+	sum(rowcnt) as rowcnt, sum(sumlatency) as sumlatency, 
+	round((sum(sumlatency)/sum(rowcnt))) as avgLatency
+	FROM turidatadaily	
+	WHERE uripath like #{uripath}
+	AND calleddate::date between to_date(#{start}, 'YYYY-MM-DD') and to_date(#{end}, 'YYYY-MM-DD')
+	AND logType = #{logType}
+	<if test="service != null">
+	AND service = #{service}
+	</if>
+	group by time
+	ORDER BY time
+	</select>
+
+
+
+
+	<resultMap type="com.lge.cto.swinfra.tiger.vo.AvgRestofUriVO" id="AvgRestofUriVOMap">
+		<id property="calledTime" column="calledtime" javaType="java.lang.String"/>
+		<result property="avgRest" column="avgLatency" javaType="long" />
+		<result property="count" column="rowcnt" javaType="int" />
+	</resultMap>
+
+	<select id="getUriHistory" parameterType="java.util.Map" resultMap="AvgRestofUriVOMap" >
+		SELECT to_char(calledtime, 'HH24:MI') as calledtime, 
+		sum(rowcnt) as rowcnt,
+		round((sum(sumlatency)/sum(rowcnt))) as avgLatency
+		FROM turidatapermin
+		
+		WHERE uripath like #{uripath}
+		AND calledtime between to_timestamp(#{sdate}, 'yyyy-mm-dd HH24:MI') and to_timestamp(#{edate}, 'yyyy-mm-dd HH24:MI')
+		AND logType = #{logType}
+		<if test="service != null">
+		AND service = #{service}
+		</if>
+		group by calledtime
+		ORDER BY calledtime
+	</select>
+
+
+	<select id="getUriDetail2" parameterType="java.util.Map" resultMap="AvgRestofUriResult">
+		<![CDATA[
+		SELECT to_char(calledtime, 'DD HH24:MI:SS') as calledtime, 
+		avg(elaptime) as avgResT, count(*) as cnt
+		FROM TURIDATA
+		WHERE uripath_hash = (select uripath_hash from turipathkey where uripath = #{uri})
+		AND calledTime < to_timestamp(#{edatetime}, 'yyyy-mm-dd HH24:MI:SS') and calledTime >=  to_timestamp(#{sdatetime}, 'yyyy-mm-dd HH24:MI:SS')
+		GROUP BY calledtime
+		ORDER BY calledtime
+		]]>
+	</select>
+	
+	
+	<resultMap type="com.lge.cto.swinfra.tiger.domain.HttpStatusDto" id="HttpStatusResult">
+		<id property="httpStatus" column="httpstatus" javaType="String"/>
+		<result property="count" column="cnt" javaType="int" />
+	</resultMap>
+	
+	<select id="getHttpStatusDaily" parameterType="java.util.Map" resultMap="HttpStatusResult">
+		<![CDATA[
+		SELECT httpstatus, count(*) as cnt
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		GROUP BY httpstatus
+		ORDER BY httpstatus
+		]]>
+	</select>
+	
+	
+	<select id="getLatencyDaily" parameterType="java.util.Map" resultType="java.lang.Long">
+		<![CDATA[
+		SELECT count(*) as cnt 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime between #{minResT}::int and #{maxResT}::int
+		]]>
+	</select>
+	
+	<select id="getLatencyDailyMin" parameterType="java.util.Map" resultType="java.lang.Long">
+		<![CDATA[
+		SELECT count(*) 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime <= #{maxResT}::int
+		]]>
+	</select>
+	
+	<select id="getLatencyDailyMax" parameterType="java.util.Map" resultType="java.lang.Long">
+		<![CDATA[
+		SELECT count(*) 
+		FROM turidata
+		WHERE calledTime::date = to_timestamp(#{date}, 'yyyy-mm-dd')
+		AND elaptime > #{minResT}::int
+		]]>
+	</select>
+</mapper>

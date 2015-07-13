@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper  PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd"> 
+
+
+<mapper namespace="com.lge.cto.swinfra.tiger.latency">
+
+	<resultMap type="com.lge.cto.swinfra.tiger.vo.AvgLatencyOfIPRangeVO" id="AvgLatencyResult">
+		<result property="hh" column="t1" javaType="java.lang.String"/>
+		<result property="ip_subset" column="ip_subset" javaType="java.lang.String"/>
+		<result property="AvgLatency" column="t2" javaType="double"/>
+	</resultMap>
+
+
+<!-- 
+Source IP별 통계 페이지에서의
+IP 대역별 평균 지연 시간 그래프
+주의: httpstatus >= 200 and < 400 인 데이터만 취급함
+-->
+	<select id="retrieveAvgLatencyHourlyofIPRange" parameterType="java.util.Map" 
+		resultMap="AvgLatencyResult">
+	SELECT hh as t1, ip_subset, round(sum(sumlatency)/sum(cnt),2) as t2
+	FROM TLatencyPerIP
+	WHERE ymd = #{date}
+	AND logType = #{logType}
+	<if test="service != null">
+		AND service = #{service}
+	</if>
+	
+	<if test="status1 != null">
+		AND httpstatus &gt;= #{status1}::int
+	</if>
+	
+	<if test="status2 != null">
+		AND httpstatus &lt; #{status2}::int
+	</if>
+	AND sumlatency > 0
+	GROUP BY t1, ip_subset
+	ORDER BY t1, ip_subset
+	</select>
+
+
+	<resultMap type="com.lge.cto.swinfra.tiger.domain.HttpStatusOfIPRangeDto" id="HttpStatusResult">
+		<result property="ip_subset" column="ip_subset" javaType="java.lang.String"/>
+		<result property="httpStatus" column="httpstatus" javaType="String"/>
+		<result property="count" column="t1" javaType="int"/>
+	</resultMap>
+
+	
+	<select id="retrieveHttpStatusofIPRange" parameterType="java.util.Map"
+	resultMap="HttpStatusResult">
+	SELECT ip_subset, httpstatus, sum(cnt) as t1
+	FROM tLatencyPerIP
+	WHERE ymd = #{date}
+	AND logType = #{logType}
+	AND service in ('jira3', 'collab1')
+	group by ip_subset, httpstatus
+	order by ip_subset, httpstatus
+	</select>
+
+
+<!-- 	<resultMap type="com.lge.cto.swinfra.tiger.domain.AvgRestofUriDto" id="AvgRestofUriResult"> -->
+<!-- 		<id property="calledTime" column="time" javaType="java.lang.String"/> -->
+<!-- 		<result property="avgRest" column="avgResT" javaType="double" /> -->
+<!-- 		<result property="count" column="cnt" javaType="int" /> -->
+<!-- 	</resultMap> -->
+
+
+
+	<resultMap type="com.lge.cto.swinfra.tiger.vo.AvgRestofUriVO" id="AvgRestEachServiceResult">
+		<result property="time4csv" column="calledtime" javaType="java.lang.String" />
+		<result property="calledTime" column="time" javaType="java.lang.String"/>
+		<result property="service" column="service" javaType="java.lang.String"/>
+		<result property="avgRest" column="avgResT" javaType="double" />
+		<result property="count" column="cnt" javaType="int" />
+	</resultMap>
+	
+<!-- 기간별 지연 정보 -->
+	<select id="retrieveLatencyperMin" parameterType="java.util.Map" resultMap="AvgRestEachServiceResult">
+	SELECT calledtime, to_char(calledtime, 'HH24:MI') as time, service, sum(rowcnt) as cnt, round(sum(sumlatency)/sum(rowcnt)) as avgRest
+	FROM turidatapermin
+	WHERE calledtime between to_timestamp(#{sdatetime}, 'YYYY-MM-DD HH24:MI') and to_timestamp(#{edatetime}, 'YYYY-MM-DD HH24:MI')
+	<if test="logtype !=null">
+	and logtype = #{logtype}
+	</if>
+	<if test="service != null">
+	and service = #{service}
+	</if>
+	group by calledtime, time, service
+	ORDER BY calledtime, time, service
+	</select>
+	
+	
+	<select id="retrieveLatencyperHour" parameterType="java.util.Map" resultMap="AvgRestEachServiceResult">
+	SELECT calledtime, to_char(calledtime, 'MM-DD HH24"h"') as time, service, sum(rowcnt) as cnt, round(sum(sumlatency)/sum(rowcnt)) as avgRest
+	FROM turidatapermin
+	WHERE calledtime between to_timestamp(#{sdatetime}, 'YYYY-MM-DD HH24:MI') and to_timestamp(#{edatetime}, 'YYYY-MM-DD HH24:MI')
+	<if test="logtype !=null">
+	and logtype = #{logtype}
+	</if>
+	<if test="service != null">
+	and service = #{service}
+	</if>
+	group by calledtime, time, service
+	ORDER BY calledtime, time, service
+	</select>
+
+
+
+	<resultMap type="com.lge.cto.swinfra.tiger.vo.AvgRestofUriVO" id="AvgRestEachServiceResultForDay">
+		<result property="time4csv" column="calleddate" javaType="java.lang.String" />
+		<result property="calledTime" column="calleddate" javaType="java.lang.String"/>
+		<result property="service" column="service" javaType="java.lang.String"/>
+		<result property="avgRest" column="avgResT" javaType="double" />
+		<result property="count" column="cnt" javaType="int" />
+	</resultMap>
+	
+	<select id="retrieveLatencyperDay" parameterType="java.util.Map" resultMap="AvgRestEachServiceResultForDay">
+	SELECT calleddate, service, sum(rowcnt) as cnt, round(sum(sumlatency)/sum(rowcnt)) as avgRest
+	FROM turidatadaily
+	WHERE calleddate::date between to_date(#{sdatetime}, 'YYYY-MM-DD') and to_date(#{edatetime}, 'YYYY-MM-DD')
+	<if test="logtype !=null">
+	and logtype = #{logtype}
+	</if>	
+	<if test="service != null">
+	and service = #{service}
+	</if>
+	group by calleddate, service
+	ORDER BY calleddate, service
+	</select>
+
+	
+</mapper>
